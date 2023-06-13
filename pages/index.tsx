@@ -1,11 +1,25 @@
 import type { NextPage } from "next";
 import styles from "../styles/Home.module.css";
-import { MediaRenderer, Web3Button, useActiveClaimCondition, useAddress, useClaimIneligibilityReasons, useContract, useContractMetadata, useTotalCirculatingSupply, useTotalCount } from "@thirdweb-dev/react";
+import { 
+  MediaRenderer, 
+  Web3Button, 
+  useActiveClaimConditionForWallet, 
+  useAddress, 
+  useClaimIneligibilityReasons, 
+  useContract, 
+  useContractMetadata, 
+  useTotalCirculatingSupply, 
+  useTotalCount 
+} from "@thirdweb-dev/react";
 import { CONTRACT_ADDRESS } from "../const/addresses";
 import { ethers } from "ethers";
+import { useRouter } from "next/router";
+import { useState } from "react";
 
 const Home: NextPage = () => {
   const address = useAddress();
+  const router = useRouter();
+  const maxClaimQuantity = 2;
 
   const {
     contract
@@ -19,8 +33,7 @@ const Home: NextPage = () => {
   const {
     data: activeClaimPhase,
     isLoading: isActiveClaimPhaseLoading,
-  } = useActiveClaimCondition(contract);
-  console.log(activeClaimPhase);
+  } = useActiveClaimConditionForWallet(contract, address);
 
   const {
     data: claimIneligibilityReasons,
@@ -41,6 +54,20 @@ const Home: NextPage = () => {
     data: totalClaimSupply,
     isLoading: isTotalClaimSupplyLoading,
   } = useTotalCirculatingSupply(contract);
+
+  
+
+  const [claimQuantity, setClaimQuantity] = useState(1);
+  const increment = () => {
+    if (claimQuantity < maxClaimQuantity) {
+      setClaimQuantity(claimQuantity + 1);
+    }
+  };
+  const decrement = () => {
+    if (claimQuantity > 1) {
+      setClaimQuantity(claimQuantity - 1);
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -63,7 +90,7 @@ const Home: NextPage = () => {
               ) : (
                 <p>Loading...</p>
               )}
-              {!isTotalClaimSupplyLoading && !isTotalClaimSupplyLoading ? (
+              {!isTotalSupplyLoading && !isTotalClaimSupplyLoading ? (
                 <p>Claimed: {totalClaimSupply?.toNumber()} / {totalSupply?.toNumber()}</p>
               ) : (
                 <p>Loading...</p>
@@ -77,14 +104,32 @@ const Home: NextPage = () => {
                   ) : (
                     <div>
                       <p>Eligible to claim</p>
-                      <Web3Button
-                        contractAddress={CONTRACT_ADDRESS}
-                        action={(contract) =>  contract.erc721.claim(1)}
-                      >Claim NFT</Web3Button>
+                      <div className={styles.claimContainer}>
+                        <div className={styles.claimValue}>
+                          <button
+                            className={styles.claimBtn}
+                            onClick={decrement}
+                          >-</button>
+                          <input
+                            className={styles.claimInput}
+                            type="number"
+                            value={claimQuantity}
+                          />
+                          <button
+                            className={styles.claimBtn}
+                            onClick={increment}
+                          >+</button>
+                        </div>
+                        <Web3Button
+                          contractAddress={CONTRACT_ADDRESS}
+                          action={(contract) =>  contract.erc721.claim(claimQuantity)}
+                          onSuccess={() => router.push(`/profile/${address}`)}
+                        >Claim NFT</Web3Button>
+                      </div>
                     </div>
                   )
                 ) : (
-                  <p>Loading...</p>
+                  <p>Checking Eligibility...</p>
                 )
               ) : (
                 <p>Connect Wallet to claim</p>
