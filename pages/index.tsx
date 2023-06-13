@@ -1,52 +1,99 @@
-import { ConnectWallet } from "@thirdweb-dev/react";
 import type { NextPage } from "next";
 import styles from "../styles/Home.module.css";
+import { MediaRenderer, Web3Button, useActiveClaimCondition, useAddress, useClaimIneligibilityReasons, useContract, useContractMetadata, useTotalCirculatingSupply, useTotalCount } from "@thirdweb-dev/react";
+import { CONTRACT_ADDRESS } from "../const/addresses";
+import { ethers } from "ethers";
 
 const Home: NextPage = () => {
+  const address = useAddress();
+
+  const {
+    contract
+  } = useContract(CONTRACT_ADDRESS);
+
+  const {
+    data: contractMetadata,
+    isLoading: isContractMetadataLoading,
+  } = useContractMetadata(contract);
+
+  const {
+    data: activeClaimPhase,
+    isLoading: isActiveClaimPhaseLoading,
+  } = useActiveClaimCondition(contract);
+  console.log(activeClaimPhase);
+
+  const {
+    data: claimIneligibilityReasons,
+    isLoading: isClaimIneligibilityReasonsLoading,
+  } = useClaimIneligibilityReasons(
+    contract,
+    {
+      walletAddress: address || "",
+      quantity: 1,
+    }
+  );
+
+  const {
+    data: totalSupply,
+    isLoading: isTotalSupplyLoading,
+  } = useTotalCount(contract);
+  const {
+    data: totalClaimSupply,
+    isLoading: isTotalClaimSupplyLoading,
+  } = useTotalCirculatingSupply(contract);
+
   return (
     <div className={styles.container}>
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="http://thirdweb.com/">thirdweb</a>!
-        </h1>
-
-        <p className={styles.description}>
-          Get started by configuring your desired network in{" "}
-          <code className={styles.code}>pages/_app.tsx</code>, then modify the{" "}
-          <code className={styles.code}>pages/index.tsx</code> file!
-        </p>
-
-        <div className={styles.connect}>
-          <ConnectWallet />
-        </div>
-
-        <div className={styles.grid}>
-          <a href="https://portal.thirdweb.com/" className={styles.card}>
-            <h2>Portal &rarr;</h2>
-            <p>
-              Guides, references and resources that will help you build with
-              thirdweb.
-            </p>
-          </a>
-
-          <a href="https://thirdweb.com/dashboard" className={styles.card}>
-            <h2>Dashboard &rarr;</h2>
-            <p>
-              Deploy, configure and manage your smart contracts from the
-              dashboard.
-            </p>
-          </a>
-
-          <a
-            href="https://portal.thirdweb.com/templates"
-            className={styles.card}
-          >
-            <h2>Templates &rarr;</h2>
-            <p>
-              Discover and clone template projects showcasing thirdweb features.
-            </p>
-          </a>
-        </div>
+        {!isContractMetadataLoading && (
+          <div className={styles.heroSection}>
+            <div className={styles.collectionImage}>
+              <MediaRenderer
+                src={contractMetadata.image}
+              />
+            </div>
+            <div>
+              <h1>{contractMetadata.name}</h1>
+              <p>{contractMetadata.description}</p>
+              {!isActiveClaimPhaseLoading ? (
+                <div>
+                  <p>Claim Phase: {activeClaimPhase?.metadata?.name}</p>
+                  <p>Price: {ethers.utils.formatUnits(activeClaimPhase?.price!)}</p>
+                </div>
+              ) : (
+                <p>Loading...</p>
+              )}
+              {!isTotalClaimSupplyLoading && !isTotalClaimSupplyLoading ? (
+                <p>Claimed: {totalClaimSupply?.toNumber()} / {totalSupply?.toNumber()}</p>
+              ) : (
+                <p>Loading...</p>
+              )}
+              {address ? (
+                !isClaimIneligibilityReasonsLoading ? (
+                  claimIneligibilityReasons?.length! > 0 ? (
+                    claimIneligibilityReasons?.map((reason, index) => (
+                      <p key={index}>{reason}</p>
+                    ))
+                  ) : (
+                    <div>
+                      <p>Eligible to claim</p>
+                      <Web3Button
+                        contractAddress={CONTRACT_ADDRESS}
+                        action={(contract) =>  contract.erc721.claim(1)}
+                      >Claim NFT</Web3Button>
+                    </div>
+                  )
+                ) : (
+                  <p>Loading...</p>
+                )
+              ) : (
+                <p>Connect Wallet to claim</p>
+              )}
+              <div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

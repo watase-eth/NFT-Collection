@@ -1,9 +1,11 @@
 .container {
   padding: 0 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .main {
-  min-height: 100vh;
+  min-height: 75vh;
   padding: 4rem 0;
   flex: 1;
   display: flex;
@@ -116,4 +118,28 @@
 }
 .logo img {
   filter: invert(1);
+}
+
+.navbar {
+  background-color: #1b2129;
+  color: #fff;
+  padding: 1rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.heroSection {
+  background-color: #1b2129;
+  color: #fff;
+  padding: 2rem 2rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 20px;
+}
+.collectionImage {
+  border-radius: 20px;
+  overflow: hidden;
+  margin-right: 2rem;
 }
